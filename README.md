@@ -5,7 +5,7 @@
 
 
 <center>
-<img src="[https://i.ibb.co/hf7t4tz/req-al-mr-335x130.png](https://media.forgecdn.net/attachments/988/553/mobstacker-1.png)" alt="An entity stacked to almost maximum integer limit">
+<img src="https://wsrv.nl/?url=https%3A%2F%2Fmedia.forgecdn.net%2Fattachments%2F988%2F553%2Fmobstacker-1.png&n=-1" alt="An entity stacked to almost maximum integer limit">
 <a href="https://modrinth.com/mod/almanac-lib">
 <img src="https://i.ibb.co/hf7t4tz/req-al-mr-335x130.png" alt="Requires Almanac">
 </a>
