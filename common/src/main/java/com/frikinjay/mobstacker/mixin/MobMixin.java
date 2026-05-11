@@ -1,6 +1,8 @@
 package com.frikinjay.mobstacker.mixin;
 
 import com.frikinjay.mobstacker.MobStacker;
+import net.minecraft.world.entity.ConversionParams;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import org.spongepowered.asm.mixin.Mixin;
@@ -12,14 +14,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MobMixin {
 
     @Inject(method = "convertTo", at = @At("RETURN"), cancellable = true)
-    private <T extends Mob> void mobstacker$convertTo(EntityType<T> entityType, boolean bl, CallbackInfoReturnable<T> cir) {
+    private <T extends Mob> void mobstacker$convertTo(EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason entitySpawnReason, ConversionParams.AfterConversion<T> afterConversion, CallbackInfoReturnable<T> cir) {
         Mob instance = (Mob) (Object) this;
         T mob = cir.getReturnValue();
         if (mob == null) {
-                cir.setReturnValue(null);
+            cir.setReturnValue(null);
         } else {
             MobStacker.setStackSize(mob, MobStacker.getStackSize(instance));
-            if(mob.hasCustomName()) {
+            if (mob.hasCustomName()) {
                 mob.setCustomName(null);
             }
             MobStacker.updateStackDisplay(mob);

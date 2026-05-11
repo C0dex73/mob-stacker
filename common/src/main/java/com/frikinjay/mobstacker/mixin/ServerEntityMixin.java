@@ -26,7 +26,7 @@ public class ServerEntityMixin {
     private void mobstacker$updateStackDisplayBeforeSendingChanges(CallbackInfo ci) {
         if (entity instanceof Mob livingEntity && livingEntity instanceof ICustomDataHolder) {
             CompoundTag customData = ((ICustomDataHolder) livingEntity).mobstacker$getCustomData();
-            int stackSize = customData.getInt(MobStacker.STACK_SIZE_KEY);
+            int stackSize = customData.getIntOr(MobStacker.STACK_SIZE_KEY, 1);
             if (stackSize > 1) {
                 MobStacker.updateStackDisplay(livingEntity);
             }

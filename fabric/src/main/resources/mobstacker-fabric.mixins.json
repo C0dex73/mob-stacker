@@ -2,6 +2,7 @@
   "required": true,
   "package": "com.frikinjay.mobstacker.fabric.mixin",
   "compatibilityLevel": "JAVA_21",
+  "refmap": "mobstacker-fabric.mixins.refmap.json",
   "minVersion": "0.8",
   "client": [
   ],

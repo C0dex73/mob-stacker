@@ -12,11 +12,14 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 
@@ -31,7 +34,7 @@ import static net.minecraft.commands.Commands.literal;
 public class MobStackerCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(literal(MOD_ID)
-                .requires(source -> source.hasPermission(2))
+                .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
                 .then(literal("stackerConfig")
                         .then(literal("killWholeStackOnDeath")
                                 .then(argument("value", BoolArgumentType.bool())
@@ -80,7 +83,7 @@ public class MobStackerCommands {
                                         .executes(MobStackerCommands::setWaterAmbientMobCap))))
                 .then(literal("ignore")
                         .then(literal("entity")
-                                .then(argument("entityId", ResourceLocationArgument.id())
+                                .then(argument("entityId", IdentifierArgument.id())
                                         .suggests(MobStackerCommands::suggestEntities)
                                         .executes(MobStackerCommands::ignoreEntity)))
                         .then(literal("mod")
@@ -89,7 +92,7 @@ public class MobStackerCommands {
                                         .executes(MobStackerCommands::ignoreMod))))
                 .then(literal("unignore")
                         .then(literal("entity")
-                                .then(argument("entityId", ResourceLocationArgument.id())
+                                .then(argument("entityId", IdentifierArgument.id())
                                         .suggests(MobStackerCommands::suggestIgnoredEntities)
                                         .executes(MobStackerCommands::unignoreEntity)))
                         .then(literal("mod")
@@ -105,8 +108,8 @@ public class MobStackerCommands {
     private static CompletableFuture<Suggestions> suggestEntities(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
         String remaining = builder.getRemaining().toLowerCase();
         BuiltInRegistries.ENTITY_TYPE.forEach(entityType -> {
-            if (entityType.create(context.getSource().getLevel()) instanceof Mob) {
-                ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
+            if (entityType.create(context.getSource().getLevel(), EntitySpawnReason.NATURAL) instanceof Mob) {
+                Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
                 if (id.toString().toLowerCase().startsWith(remaining)) {
                     builder.suggest(id.toString());
                 }
@@ -120,7 +123,7 @@ public class MobStackerCommands {
         Set<String> modsWithMobs = new HashSet<>();
 
         BuiltInRegistries.ENTITY_TYPE.forEach(entityType -> {
-            if (entityType.create(context.getSource().getLevel()) instanceof Mob) {
+            if (entityType.create(context.getSource().getLevel(), EntitySpawnReason.NATURAL) instanceof Mob) {
                 String modId = BuiltInRegistries.ENTITY_TYPE.getKey(entityType).getNamespace();
                 modsWithMobs.add(modId);
             }
@@ -197,7 +200,7 @@ public class MobStackerCommands {
     }
 
     private static int ignoreEntity(CommandContext<CommandSourceStack> context) {
-        ResourceLocation entityId = ResourceLocationArgument.getId(context, "entityId");
+        Identifier entityId = IdentifierArgument.getId(context, "entityId");
         String entityIdString = entityId.toString();
         if (MobStacker.config.getIgnoredEntities().contains(entityIdString)) {
             context.getSource().sendSuccess(() -> Component.literal("Entity '" + entityIdString + "' is already ignored").withStyle(ChatFormatting.RED), false);
@@ -220,7 +223,7 @@ public class MobStackerCommands {
     }
 
     private static int unignoreEntity(CommandContext<CommandSourceStack> context) {
-        ResourceLocation entityId = ResourceLocationArgument.getId(context, "entityId");
+        Identifier entityId = IdentifierArgument.getId(context, "entityId");
         String entityIdString = entityId.toString();
         if (!MobStacker.config.getIgnoredEntities().contains(entityIdString)) {
             context.getSource().sendSuccess(() -> Component.literal("Entity '" + entityIdString + "' is not in the ignored list").withStyle(ChatFormatting.RED), false);
@@ -247,8 +250,8 @@ public class MobStackerCommands {
             Entity targetEntity = EntityArgument.getEntity(context, "entity");
             int newSize = IntegerArgumentType.getInteger(context, "size");
 
-            if (!(targetEntity instanceof LivingEntity)) {
-                context.getSource().sendFailure(Component.literal("Target is not a living entity").withStyle(ChatFormatting.RED));
+            if (!(targetEntity instanceof Mob)) {
+                context.getSource().sendFailure(Component.literal("Target is not a mob").withStyle(ChatFormatting.RED));
                 return 1;
             }
 
@@ -291,7 +294,7 @@ public class MobStackerCommands {
 
     private static CompletableFuture<Suggestions> suggestItems(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
         String remaining = builder.getRemaining().toLowerCase();
-        for (ResourceLocation itemId : BuiltInRegistries.ITEM.keySet()) {
+        for (Identifier itemId : BuiltInRegistries.ITEM.keySet()) {
             String itemString = itemId.toString();
             if (itemString.toLowerCase().startsWith(remaining)) {
                 builder.suggest(itemString);
@@ -302,7 +305,7 @@ public class MobStackerCommands {
 
     private static int setSeparatorItem(CommandContext<CommandSourceStack> context) {
         String itemString = StringArgumentType.getString(context, "item");
-        ResourceLocation itemId = ResourceLocation.tryParse(itemString);
+        Identifier itemId = Identifier.tryParse(itemString);
         if (itemId != null && BuiltInRegistries.ITEM.containsKey(itemId)) {
             if (MobStacker.config.getSeparatorItem().equals(itemString)) {
                 context.getSource().sendSuccess(() -> Component.literal("Separator item is already set to " + itemString).withStyle(ChatFormatting.RED), false);

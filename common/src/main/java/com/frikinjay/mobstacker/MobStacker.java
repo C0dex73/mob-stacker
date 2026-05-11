@@ -8,22 +8,27 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.animal.Cat;
-import net.minecraft.world.entity.animal.Fox;
-import net.minecraft.world.entity.animal.MushroomCow;
-import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.axolotl.Axolotl;
+import net.minecraft.world.entity.animal.cow.MushroomCow;
+import net.minecraft.world.entity.animal.feline.Cat;
+import net.minecraft.world.entity.animal.fox.Fox;
 import net.minecraft.world.entity.animal.frog.Frog;
+import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Slime;
-import net.minecraft.world.entity.monster.ZombieVillager;
-import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.monster.zombie.ZombieVillager;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -54,9 +59,9 @@ public final class MobStacker {
             Villager.class, (self, other) -> checkVillagerMatch((Villager)self, (Villager)other),
             ZombieVillager.class, (self, other) -> checkZombieVillagerMatch((ZombieVillager)self, (ZombieVillager)other),
             Slime.class, (self, other) -> ((Slime)self).getSize() == ((Slime)other).getSize(),
-            Frog.class, (self, other) -> ((Frog)self).getVariant() == ((Frog)other).getVariant(),
+            Frog.class, (self, other) -> ((Frog)self).getVariant().is(((Frog)other).getVariant()),
             Axolotl.class, (self, other) -> ((Axolotl)self).getVariant() == ((Axolotl)other).getVariant(),
-            Cat.class, (self, other) -> ((Cat)self).getVariant() == ((Cat)other).getVariant(),
+            Cat.class, (self, other) -> ((Cat)self).getVariant().is(((Cat)other).getVariant()),
             Fox.class, (self, other) -> ((Fox)self).getVariant() == ((Fox)other).getVariant(),
             MushroomCow.class, (self, other) -> ((MushroomCow)self).getVariant() == ((MushroomCow)other).getVariant()
     );
@@ -76,7 +81,7 @@ public final class MobStacker {
             return false;
         }
 
-        ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+        Identifier entityId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
         if (config.getIgnoredEntities().contains(entityId.toString()) ||
                 config.getIgnoredMods().contains(entityId.getNamespace())) {
             return false;
@@ -103,20 +108,20 @@ public final class MobStacker {
     }
 
     private static boolean checkVillagerMatch(Villager self, Villager other) {
-        return self.getVariant() == other.getVariant()
-                && self.getVillagerData().getProfession() == VillagerProfession.NONE
-                && other.getVillagerData().getProfession() == VillagerProfession.NONE;
+        return self.getVillagerData().type().is(other.getVillagerData().type())
+                && self.getVillagerData().profession().is(VillagerProfession.NONE)
+                && other.getVillagerData().profession().is(VillagerProfession.NONE);
     }
 
     private static boolean checkZombieVillagerMatch(ZombieVillager self, ZombieVillager other) {
-        return self.getVariant() == other.getVariant()
-                && self.getVillagerData().getProfession() == VillagerProfession.NONE
-                && other.getVillagerData().getProfession() == VillagerProfession.NONE;
+        return self.getVillagerData().type().is(other.getVillagerData().type())
+                && self.getVillagerData().profession().is(VillagerProfession.NONE)
+                && other.getVillagerData().profession().is(VillagerProfession.NONE);
     }
 
     public static void spawnNewEntity(ServerLevel serverLevel, Mob self, int stackSize) {
         EntityType<?> entityType = self.getType();
-        Mob newEntity = (Mob) entityType.create(serverLevel);
+        Mob newEntity = (Mob) entityType.create(serverLevel, EntitySpawnReason.NATURAL);
         if (newEntity == null) return;
 
         copyEntityData(self, newEntity, serverLevel);
@@ -126,9 +131,10 @@ public final class MobStacker {
 
     private static void copyEntityData(Mob source, Mob target, ServerLevel serverLevel) {
         target.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(source.blockPosition()),
-                MobSpawnType.NATURAL, null);
-        target.moveTo(source.position().x, source.position().y, source.position().z,
-                source.getYRot(), source.getXRot());
+                EntitySpawnReason.NATURAL, null);
+        target.setPos(source.position().x, source.position().y, source.position().z);
+        target.setYRot(source.getYRot());
+        target.setXRot(source.getXRot());
         target.yBodyRot = source.yBodyRot;
 
         if (source.hasCustomName()) {
@@ -145,22 +151,14 @@ public final class MobStacker {
             targetSheep.setColor(sourceSheep.getColor());
         } else if (source instanceof Villager sourceVillager && target instanceof Villager targetVillager) {
             targetVillager.setVillagerData(sourceVillager.getVillagerData());
-            targetVillager.setVariant(sourceVillager.getVariant());
         } else if (source instanceof ZombieVillager sourceZombie && target instanceof ZombieVillager targetZombie) {
             targetZombie.setVillagerData(sourceZombie.getVillagerData());
-            targetZombie.setVariant(sourceZombie.getVariant());
         } else if (source instanceof Slime sourceSlime && target instanceof Slime targetSlime) {
             targetSlime.setSize(sourceSlime.getSize(), true);
-        } else if (source instanceof Frog sourceFrog && target instanceof Frog targetFrog) {
-            targetFrog.setVariant(sourceFrog.getVariant());
         } else if (source instanceof Axolotl sourceAxolotl && target instanceof Axolotl targetAxolotl) {
-            targetAxolotl.setVariant(sourceAxolotl.getVariant());
-        } else if (source instanceof Cat sourceCat && target instanceof Cat targetCat) {
-            targetCat.setVariant(sourceCat.getVariant());
-        } else if (source instanceof Fox sourceFox && target instanceof Fox targetFox) {
-            targetFox.setVariant(sourceFox.getVariant());
+            // setVariant is private in Axolotl
         } else if (source instanceof MushroomCow sourceCow && target instanceof MushroomCow targetCow) {
-            targetCow.setVariant(sourceCow.getVariant());
+            // setVariant is private in MushroomCow
         }
     }
 
@@ -170,7 +168,7 @@ public final class MobStacker {
         try {
             ServerLevel serverLevel = (ServerLevel) entity.level();
             EntityType<?> entityType = entity.getType();
-            Mob newEntity = (Mob) entityType.create(entity.level());
+            Mob newEntity = (Mob) entityType.create(entity.level(), EntitySpawnReason.NATURAL);
             if (newEntity == null) return;
 
             setStackSize(entity, getStackSize(entity) - 1);
@@ -178,7 +176,6 @@ public final class MobStacker {
             copyEntityDataForSeparation(entity, newEntity, serverLevel);
             handleHealthOnSeparation(entity, newEntity);
 
-            // Apply custom entity data
             MobStackerAPI.applyEntityDataModifiersOnSeparation(entity, newEntity);
             entity.level().addFreshEntity(newEntity);
 
@@ -190,9 +187,10 @@ public final class MobStacker {
 
     private static void copyEntityDataForSeparation(Mob source, Mob target, ServerLevel serverLevel) {
         target.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(source.blockPosition()),
-                MobSpawnType.NATURAL, null);
-        target.moveTo(source.position().x, source.position().y, source.position().z,
-                source.getYRot(), source.getXRot());
+                EntitySpawnReason.NATURAL, null);
+        target.setPos(source.position().x, source.position().y, source.position().z);
+        target.setYRot(source.getYRot());
+        target.setXRot(source.getXRot());
         target.yBodyRot = source.yBodyRot;
 
         Component newName = Component.literal("Lone " + Almanac.getLocalizedEntityName(source.getType()).getString());
@@ -210,8 +208,9 @@ public final class MobStacker {
     public static void mergeEntities(Mob target, Mob source) {
         int newStackSize = Math.min(getStackSize(target) + getStackSize(source), getMaxMobStackSize());
 
-        CompoundTag targetNbt = new CompoundTag();
-        target.saveWithoutId(targetNbt);
+        TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+        target.saveWithoutId(output);
+        CompoundTag targetNbt = output.buildResult();
 
         Almanac.dropEquipmentOnDiscard(source);
         Almanac.dropEquipmentOnDiscard(target);
@@ -220,7 +219,8 @@ public final class MobStacker {
 
         updateStackDataInNbt(targetNbt, newStackSize);
 
-        target.load(targetNbt);
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, target.level().registryAccess(), targetNbt);
+        target.load(input);
 
         updateHealth(target, source);
 
@@ -230,10 +230,11 @@ public final class MobStacker {
     }
 
     private static void copyRelevantNbtData(Mob source, CompoundTag targetNbt) {
-        CompoundTag sourceNbt = new CompoundTag();
-        source.saveWithoutId(sourceNbt);
+        TagValueOutput sourceOutput = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+        source.saveWithoutId(sourceOutput);
+        CompoundTag sourceNbt = sourceOutput.buildResult();
 
-        sourceNbt.getAllKeys().stream()
+        sourceNbt.keySet().stream()
                 .filter(key -> !isExcludedNbtKey(key))
                 .forEach(key -> targetNbt.put(key, sourceNbt.get(key)));
     }
@@ -244,8 +245,8 @@ public final class MobStacker {
     }
 
     private static void updateStackDataInNbt(CompoundTag nbt, int stackSize) {
-        CompoundTag stackData = nbt.contains(STACK_DATA_KEY, 10) ?
-                nbt.getCompound(STACK_DATA_KEY) : new CompoundTag();
+        CompoundTag stackData = nbt.contains(STACK_DATA_KEY) ?
+                nbt.getCompoundOrEmpty(STACK_DATA_KEY) : new CompoundTag();
         stackData.putInt(STACK_SIZE_KEY, stackSize);
         nbt.put(STACK_DATA_KEY, stackData);
     }
@@ -385,7 +386,7 @@ public final class MobStacker {
             return 1;
         }
         CompoundTag customData = holder.mobstacker$getCustomData();
-        return customData.contains(STACK_SIZE_KEY) ? customData.getInt(STACK_SIZE_KEY) : 1;
+        return customData.contains(STACK_SIZE_KEY) ? customData.getIntOr(STACK_SIZE_KEY, 1) : 1;
     }
 
     public static void setStackSize(Mob entity, int size) {
@@ -400,7 +401,7 @@ public final class MobStacker {
             return true;
         }
         CompoundTag customData = holder.mobstacker$getCustomData();
-        return !customData.contains(CAN_STACK_KEY) || customData.getBoolean(CAN_STACK_KEY);
+        return !customData.contains(CAN_STACK_KEY) || customData.getBooleanOr(CAN_STACK_KEY, true);
     }
 
     public static void setCanStack(Mob entity, boolean canStack) {

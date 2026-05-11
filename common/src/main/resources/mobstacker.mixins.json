@@ -2,6 +2,7 @@
   "required": true,
   "package": "com.frikinjay.mobstacker.mixin",
   "compatibilityLevel": "JAVA_21",
+  "refmap": "mobstacker.mixins.refmap.json",
   "minVersion": "0.8",
   "client": [
   ],
@@ -13,10 +14,7 @@
     "MobCategoryMixin",
     "MobMixin",
     "PlayerMixin",
-    "ServerEntityMixin",
-    "mobs.PigMixin",
-    "mobs.VillagerMixin",
-    "mobs.ZombieMixin"
+    "ServerEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1
