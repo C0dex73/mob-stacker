@@ -19,6 +19,7 @@ public class MobStackerConfig {
     private int maxMobStackSize = 16;
     private double stackRadius = 6.0;
     private boolean enableSeparator = false;
+    private boolean enableBreeding = true;
     private boolean consumeSeparator = true;
     private String separatorItem = "minecraft:diamond";
 
@@ -46,6 +47,7 @@ public class MobStackerConfig {
     public String getSeparatorItem() { return separatorItem; }
     public boolean getConsumeSeparator() { return consumeSeparator; }
     public boolean getEnableSeparator() { return enableSeparator; }
+    public boolean getEnableBreeding() { return enableBreeding; }
     public boolean getKillWholeStackOnDeath() { return killWholeStackOnDeath; }
     public boolean getStackHealth() { return stackHealth; }
     public int getMaxMobStackSize() { return maxMobStackSize; }
@@ -65,6 +67,11 @@ public class MobStackerConfig {
         this.enableSeparator = enableSeparator;
         save();
     }
+
+	public void setEnableBreeding(boolean enableBreeding) {
+		this.enableBreeding = enableBreeding;
+		save();
+	}
 
     public void setKillWholeStackOnDeath(boolean killWholeStackOnDeath) {
         this.killWholeStackOnDeath = killWholeStackOnDeath;

@@ -48,7 +48,11 @@ public class MobStackerCommands {
                         .then(literal("stackRadius")
                                 .then(argument("value", DoubleArgumentType.doubleArg(0.1, 42000))
                                         .executes(MobStackerCommands::setStackRadius)))
-                        .then(literal("separator")
+			.then(literal("breeding")
+				.then((literal("enableBreeding")
+					.then(argument("value", BoolArgumentType.bool())
+						.executes(MobStackerCommands::setEnableBreeding)))))
+			.then(literal("separator")
                                 .then(literal("enableSeparator")
                                         .then(argument("value", BoolArgumentType.bool())
                                                 .executes(MobStackerCommands::setEnableSeparator)))
@@ -269,6 +273,17 @@ public class MobStackerCommands {
         }
         return 1;
     }
+
+	private static int setEnableBreeding(CommandContext<CommandSourceStack> context) {
+		boolean newValue = BoolArgumentType.getBool(context, "value");
+		if (MobStacker.config.getEnableBreeding() == newValue){
+			context.getSource().sendSuccess(() -> Component.literal("Breeding is already " + (newValue ? "enabled" : "disabled")).withStyle(ChatFormatting.RED), false);
+		} else {
+			MobStacker.config.setEnableBreeding(newValue);
+			context.getSource().sendSuccess(() -> Component.literal("Separator has been " + (newValue ? "enabled" : "disabled")).withStyle(ChatFormatting.AQUA), true);
+		}
+		return 1;
+	}
 
     private static int setEnableSeparator(CommandContext<CommandSourceStack> context) {
         boolean newValue = BoolArgumentType.getBool(context, "value");

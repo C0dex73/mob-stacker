@@ -419,6 +419,7 @@ public final class MobStacker {
     public static boolean getStackHealth() {return config.getStackHealth();}
 
     public static boolean getEnableSeparator() {return config.getEnableSeparator();}
+    public static boolean getEnableBreeding() {return config.getEnableSeparator();}
 
     public static boolean getConsumeSeparator() {return config.getConsumeSeparator();}
 
