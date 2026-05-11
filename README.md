@@ -1,3 +1,9 @@
+> [!CAUTION]
+> This is a fork from [frikinjay](https://github.com/frikinjay/mob-stacker/commits?author=frikinjay)'s [mob stacker](https://github.com/frikinjay/mob-stacker) mod.
+> His version is, as I write these lines, not available for the later versions of minecraft, which is what made me port it to recent versions.
+> However, this fork **DOES NOT SUPPORT NEOFORGE**, whereas his version does. This fork, for now, only provide a fabric version of the mod.
+
+
 <center>
 <img src="[https://i.ibb.co/hf7t4tz/req-al-mr-335x130.png](https://media.forgecdn.net/attachments/988/553/mobstacker-1.png)" alt="An entity stacked to almost maximum integer limit">
 <a href="https://modrinth.com/mod/almanac-lib">
@@ -5,9 +11,6 @@
 </a>
 <a href="https://modrinth.com/mod/lmd">
 <img src="https://i.ibb.co/HVg2LR9/req-lmd-mr-335x130.png" alt="Requires Let Me Despawn">
-</a>
-<a href="https://discord.gg/aPPEPJWG39">
-<img src="https://i.ibb.co/GFT3JFP/req-discord-130x130.png" alt="Discord Server Invite Link">
 </a>
 </center>
 <br>
@@ -124,5 +127,10 @@ All commands require operator permissions (level 2) and are prefixed with `/mobs
 - 🐑🐷🧟 Compatible with various entity types: animals, monsters, and NPCs.
 
 ---
+## Contributors
+
+This mod was created by [@frikinjay](https://github.com/frikinjay)
+<br>
+This mod was ported to recent minecraft versions by [@codex](https://github.com/C0dex73)
 
 *Report issues to the issue tracker on github.*
